@@ -288,11 +288,8 @@ func (s *Service) SearchAudit(ctx context.Context, batchID string, q AuditFilter
 	if err != nil {
 		return AuditPage{}, err
 	}
-	if _, verified := s.auditVerifications.Load(batchID); !verified {
-		if err = audit.Verify(all); err != nil {
-			return AuditPage{HeadHash: audit.Head(all), Verified: false, FirstInvalidSequence: firstInvalid(all), IntegrityDetail: err.Error()}, err
-		}
-		s.auditVerifications.Store(batchID, struct{}{})
+	if err = audit.Verify(all); err != nil {
+		return AuditPage{HeadHash: audit.Head(all), Verified: false, FirstInvalidSequence: firstInvalid(all), IntegrityDetail: err.Error()}, err
 	}
 	matched := []domain.AuditEvent{}
 	for _, e := range all {

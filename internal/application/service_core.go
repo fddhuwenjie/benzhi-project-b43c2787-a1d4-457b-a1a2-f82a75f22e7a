@@ -19,10 +19,9 @@ import (
 type Clock func() time.Time
 
 type Service struct {
-	store              *persistence.Store
-	now                Clock
-	locks              sync.Map
-	auditVerifications sync.Map
+	store *persistence.Store
+	now   Clock
+	locks sync.Map
 }
 
 func NewService(store *persistence.Store) *Service { return &Service{store: store, now: time.Now} }
