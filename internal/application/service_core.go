@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"astroplate-vault/internal/audit"
@@ -17,6 +18,14 @@ import (
 )
 
 type Clock func() time.Time
+
+// batchLock serializes access to a single batch and tracks how many callers
+// are currently holding or waiting on the mutex so the registry entry can be
+// reclaimed once the last contender releases it.
+type batchLock struct {
+	mu      sync.Mutex
+	waiters int32
+}
 
 type Service struct {
 	store *persistence.Store
@@ -27,10 +36,36 @@ type Service struct {
 func NewService(store *persistence.Store) *Service { return &Service{store: store, now: time.Now} }
 
 func (s *Service) lock(batchID string) func() {
-	value, _ := s.locks.LoadOrStore(batchID, &sync.Mutex{})
-	mu := value.(*sync.Mutex)
-	mu.Lock()
-	return mu.Unlock
+	for {
+		raw, loaded := s.locks.LoadOrStore(batchID, &batchLock{})
+		bl := raw.(*batchLock)
+		atomic.AddInt32(&bl.waiters, 1)
+		if !loaded {
+			// This goroutine created the entry, so it is the sole waiter and
+			// the entry cannot have been concurrently deleted.
+			bl.mu.Lock()
+			return s.unlocker(batchID, bl)
+		}
+		bl.mu.Lock()
+		// After acquiring the mutex, confirm the entry is still the live
+		// registry mapping for this batch. A concurrent unlocker may have
+		// deleted and replaced it between LoadOrStore and Lock, in which case
+		// we retry against the fresh mapping.
+		if current, ok := s.locks.Load(batchID); ok && current.(*batchLock) == bl {
+			return s.unlocker(batchID, bl)
+		}
+		bl.mu.Unlock()
+		atomic.AddInt32(&bl.waiters, -1)
+	}
+}
+
+func (s *Service) unlocker(batchID string, bl *batchLock) func() {
+	return func() {
+		bl.mu.Unlock()
+		if atomic.AddInt32(&bl.waiters, -1) == 0 {
+			s.locks.CompareAndDelete(batchID, bl)
+		}
+	}
 }
 
 // LockRegistrySize reports the number of retained batch lock entries.
