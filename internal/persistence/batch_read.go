@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"time"
 
@@ -26,11 +25,11 @@ func scanBatch(scanner interface{ Scan(...any) error }) (*domain.PlateBatch, err
 
 func decodeBatchSnapshot(raw []byte) (*domain.PlateBatch, error) {
 	if len(raw) == 0 {
-		return nil, fmt.Errorf("批次快照为空")
+		return nil, domain.NewError(domain.CodeIntegrity, "批次快照为空")
 	}
 	var batch domain.PlateBatch
 	if err := json.Unmarshal(raw, &batch); err != nil {
-		return nil, fmt.Errorf("解码批次快照失败: %v", err)
+		return nil, domain.NewError(domain.CodeIntegrity, "解码批次快照失败: %v", err)
 	}
 	if len(batch.Calibrations) == 0 && batch.Calibration != nil {
 		batch.Calibrations = []domain.CalibrationSession{*batch.Calibration}
@@ -44,7 +43,7 @@ func decodeBatchSnapshot(raw []byte) (*domain.PlateBatch, error) {
 		}
 	}
 	if err := domain.ValidateAggregate(&batch); err != nil {
-		return nil, fmt.Errorf("校验批次快照失败: %v", err)
+		return nil, domain.NewError(domain.CodeIntegrity, "校验批次快照失败: %v", err)
 	}
 	return &batch, nil
 }
