@@ -99,6 +99,9 @@ func (s *Service) PutPeerReviewDraftEvidence(ctx context.Context, batchID, draft
 		if draft.DraftRevision != r.ExpectedDraftRevision {
 			return domain.NewError(domain.CodeConflict, "expected_draft_revision 与当前草稿修订 %d 不一致", draft.DraftRevision)
 		}
+		if draft.Reviewer != r.Actor {
+			return domain.NewError(domain.CodeForbidden, "只有草稿所属复核员可写入证据")
+		}
 		stored := draft.DraftRevision
 		changed, e := draft.PutEvidence(r.CatalogNumber, r.ScanID, r.Version, r.ObservedChecksum, r.DimensionsMatch, r.BitDepthMatch, r.Note, s.now())
 		if e != nil {
@@ -176,6 +179,9 @@ func (s *Service) CompletePeerReviewDraft(ctx context.Context, batchID, draftID 
 		}
 		if draft.DraftRevision != r.ExpectedDraftRevision {
 			return domain.NewError(domain.CodeConflict, "expected_draft_revision 与当前草稿修订 %d 不一致", draft.DraftRevision)
+		}
+		if draft.Reviewer != r.Actor {
+			return domain.NewError(domain.CodeForbidden, "只有草稿所属复核员可完成草稿")
 		}
 		storedBatch, storedDraft := batch.Revision, draft.DraftRevision
 		if e = draft.Complete(batch, func() string { return newID("issue") }, s.now()); e != nil {
