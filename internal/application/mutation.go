@@ -29,7 +29,7 @@ func (s *Service) mutate(ctx context.Context, batchID, operation, eventType stri
 			return err
 		}
 		if record != nil {
-			result, err = replayOrConflict(record, operation, hash)
+			result, err = replayOrConflict(record, batchID, operation, hash)
 			return err
 		}
 		batch, err := tx.LoadBatch(ctx, batchID)

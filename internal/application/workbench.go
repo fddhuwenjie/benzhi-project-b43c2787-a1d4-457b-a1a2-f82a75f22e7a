@@ -180,7 +180,7 @@ func (s *Service) ResolveByRescan(ctx context.Context, batchID string, r RescanR
 			return e
 		}
 		if record != nil {
-			result, e = replayOrConflict(record, "rescan_resolution", hash)
+			result, e = replayOrConflict(record, batchID, "rescan_resolution", hash)
 			return e
 		}
 		batch, e := tx.LoadBatch(ctx, batchID)

@@ -24,7 +24,7 @@ func (s *Service) CreatePeerReviewDraft(ctx context.Context, batchID string, r C
 			return e
 		}
 		if record != nil {
-			result, e = replayOrConflict(record, "create_peer_review_draft", hash)
+			result, e = replayOrConflict(record, batchID, "create_peer_review_draft", hash)
 			return e
 		}
 		batch, e := tx.LoadBatch(ctx, batchID)
@@ -79,7 +79,7 @@ func (s *Service) PutPeerReviewDraftEvidence(ctx context.Context, batchID, draft
 			return e
 		}
 		if record != nil {
-			result, e = replayOrConflict(record, operation, hash)
+			result, e = replayOrConflict(record, batchID, operation, hash)
 			return e
 		}
 		batch, e := tx.LoadBatch(ctx, batchID)
@@ -160,7 +160,7 @@ func (s *Service) CompletePeerReviewDraft(ctx context.Context, batchID, draftID 
 			return e
 		}
 		if record != nil {
-			result, e = replayOrConflict(record, operation, hash)
+			result, e = replayOrConflict(record, batchID, operation, hash)
 			return e
 		}
 		batch, e := tx.LoadBatch(ctx, batchID)

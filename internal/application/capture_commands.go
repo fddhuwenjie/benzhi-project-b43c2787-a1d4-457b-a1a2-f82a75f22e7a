@@ -61,7 +61,7 @@ func (s *Service) BatchAddScans(ctx context.Context, batchID string, r BatchScan
 			return e
 		}
 		if rec != nil {
-			result, e = replayOrConflict(rec, "batch_add_scan", hash)
+			result, e = replayOrConflict(rec, batchID, "batch_add_scan", hash)
 			return e
 		}
 		b, e := tx.LoadBatch(ctx, batchID)

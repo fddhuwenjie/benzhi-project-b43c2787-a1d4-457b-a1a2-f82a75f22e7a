@@ -68,9 +68,9 @@ func payloadHash(value any) (string, error) {
 	return hex.EncodeToString(sum[:]), nil
 }
 
-func replayOrConflict(record *persistence.IdempotencyRecord, operation, hash string) (CommandResult, error) {
-	if record.Operation != operation || record.PayloadHash != hash {
-		return CommandResult{}, domain.NewError(domain.CodeIdempotency, "request_id 已用于不同命令或载荷")
+func replayOrConflict(record *persistence.IdempotencyRecord, batchID, operation, hash string) (CommandResult, error) {
+	if (batchID != "" && record.BatchID != batchID) || record.Operation != operation || record.PayloadHash != hash {
+		return CommandResult{}, domain.NewError(domain.CodeIdempotency, "request_id 已用于不同批次、命令或载荷")
 	}
 	var result CommandResult
 	if err := json.Unmarshal(record.Response, &result); err != nil {

@@ -54,7 +54,7 @@ func (s *Service) Seal(ctx context.Context, batchID string, r SealRequest) (Comm
 		return CommandResult{}, err
 	}
 	if record != nil {
-		return replayOrConflict(record, "seal", hash)
+		return replayOrConflict(record, batchID, "seal", hash)
 	}
 	verified, err := s.GetBatch(ctx, batchID)
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *Service) Seal(ctx context.Context, batchID string, r SealRequest) (Comm
 			return err
 		}
 		if record != nil {
-			result, err = replayOrConflict(record, "seal", hash)
+			result, err = replayOrConflict(record, batchID, "seal", hash)
 			return err
 		}
 		batch, err := tx.LoadBatch(ctx, batchID)

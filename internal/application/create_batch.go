@@ -24,7 +24,7 @@ func (s *Service) CreateBatch(ctx context.Context, request CreateBatchRequest) (
 			return err
 		}
 		if record != nil {
-			result, err = replayOrConflict(record, "create_batch", hash)
+			result, err = replayOrConflict(record, request.ID, "create_batch", hash)
 			return err
 		}
 		id := request.ID

@@ -56,7 +56,7 @@ func (s *Service) ResolveIssuesBatch(ctx context.Context, batchID string, r Batc
 			return e
 		}
 		if record != nil {
-			result, e = replayOrConflict(record, "resolve_issues_batch", hash)
+			result, e = replayOrConflict(record, batchID, "resolve_issues_batch", hash)
 			return e
 		}
 		b, e := tx.LoadBatch(ctx, batchID)
