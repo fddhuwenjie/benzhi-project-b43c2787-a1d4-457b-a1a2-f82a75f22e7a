@@ -18,6 +18,32 @@ import (
 
 type Clock func() time.Time
 
+// ctxMutex is a context-aware mutual-exclusion lock keyed by batchID. The
+// buffered channel acts as a single-slot semaphore: it is seeded with one
+// token, a successful receive acquires the lock, a send releases it. Waiting
+// on the receive in a select statement makes the acquisition cancelable, so
+// a request whose context is canceled while a predecessor still holds the
+// lock returns immediately instead of blocking until the lock is released.
+type ctxMutex struct{ token chan struct{} }
+
+func newCtxMutex() *ctxMutex {
+	m := &ctxMutex{token: make(chan struct{}, 1)}
+	m.token <- struct{}{}
+	return m
+}
+
+// acquire blocks until the lock is available or ctx is canceled. It returns
+// a non-nil unlock function only on success; on cancellation it returns the
+// context cause without acquiring the lock.
+func (m *ctxMutex) acquire(ctx context.Context) (func(), error) {
+	select {
+	case <-m.token:
+		return func() { m.token <- struct{}{} }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
 type Service struct {
 	store *persistence.Store
 	now   Clock
@@ -26,11 +52,9 @@ type Service struct {
 
 func NewService(store *persistence.Store) *Service { return &Service{store: store, now: time.Now} }
 
-func (s *Service) lock(batchID string) func() {
-	value, _ := s.locks.LoadOrStore(batchID, &sync.Mutex{})
-	mu := value.(*sync.Mutex)
-	mu.Lock()
-	return mu.Unlock
+func (s *Service) lock(ctx context.Context, batchID string) (func(), error) {
+	value, _ := s.locks.LoadOrStore(batchID, newCtxMutex())
+	return value.(*ctxMutex).acquire(ctx)
 }
 
 func newID(prefix string) string {

@@ -60,7 +60,10 @@ func (s *Service) QualityPreview(ctx context.Context, batchID string, expected i
 	if expected < 1 {
 		return QualityPreview{}, domain.NewError(domain.CodeValidation, "expected_revision 必须为正整数")
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return QualityPreview{}, err
+	}
 	defer unlock()
 	b, err := s.GetBatch(ctx, batchID)
 	if err != nil {
@@ -106,7 +109,10 @@ func (s *Service) PeerReviewWorkItem(ctx context.Context, batchID, reviewer stri
 	if err := domain.ValidatePrincipal("reviewer", reviewer); err != nil {
 		return PeerReviewWorkItem{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return PeerReviewWorkItem{}, err
+	}
 	defer unlock()
 	b, err := s.GetBatch(ctx, batchID)
 	if err != nil {
@@ -145,7 +151,10 @@ func (s *Service) PeerReviewWorkItem(ctx context.Context, batchID, reviewer stri
 }
 
 func (s *Service) ReconcileManifest(ctx context.Context, batchID string, r ManifestReconcileRequest) (domain.ManifestReconciliation, error) {
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return domain.ManifestReconciliation{}, err
+	}
 	defer unlock()
 	b, err := s.GetBatch(ctx, batchID)
 	if err != nil {

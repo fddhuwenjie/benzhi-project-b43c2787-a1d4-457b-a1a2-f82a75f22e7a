@@ -125,6 +125,9 @@ func (s *Store) migratePlateScanLineage(ctx context.Context) error {
 }
 
 func (s *Store) WithTx(ctx context.Context, fn func(*Tx) error) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err

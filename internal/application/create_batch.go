@@ -15,7 +15,10 @@ func (s *Service) CreateBatch(ctx context.Context, request CreateBatchRequest) (
 	if err != nil {
 		return CommandResult{}, err
 	}
-	unlock := s.lock("create:" + request.RequestID)
+	unlock, err := s.lock(ctx, "create:"+request.RequestID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {

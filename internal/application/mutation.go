@@ -20,7 +20,10 @@ func (s *Service) mutate(ctx context.Context, batchID, operation, eventType stri
 	if err != nil {
 		return CommandResult{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {

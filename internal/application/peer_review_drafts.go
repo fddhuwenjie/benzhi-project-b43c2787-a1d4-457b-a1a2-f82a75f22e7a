@@ -15,7 +15,10 @@ func (s *Service) CreatePeerReviewDraft(ctx context.Context, batchID string, r C
 	if err != nil {
 		return CommandResult{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {
@@ -70,7 +73,10 @@ func (s *Service) PutPeerReviewDraftEvidence(ctx context.Context, batchID, draft
 		return CommandResult{}, err
 	}
 	operation := "put_peer_review_draft_evidence:" + draftID
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {
@@ -120,7 +126,10 @@ func (s *Service) GetPeerReviewDraft(ctx context.Context, batchID, draftID strin
 	if err := domain.ValidateIdentifier("draft_id", draftID); err != nil {
 		return PeerReviewDraftView{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return PeerReviewDraftView{}, err
+	}
 	defer unlock()
 	batch, err := s.GetBatch(ctx, batchID)
 	if err != nil {
@@ -151,7 +160,10 @@ func (s *Service) CompletePeerReviewDraft(ctx context.Context, batchID, draftID 
 		return CommandResult{}, err
 	}
 	operation := "complete_peer_review_draft:" + draftID
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {

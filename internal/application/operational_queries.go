@@ -216,7 +216,10 @@ func (s *Service) PeerReviewHistory(ctx context.Context, batchID, reviewer strin
 }
 
 func (s *Service) ManifestPreview(ctx context.Context, batchID string, expected int64) (ManifestPreview, error) {
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return ManifestPreview{}, err
+	}
 	defer unlock()
 	b, e := s.GetBatch(ctx, batchID)
 	if e != nil {

@@ -47,7 +47,10 @@ func (s *Service) Seal(ctx context.Context, batchID string, r SealRequest) (Comm
 	if err != nil {
 		return CommandResult{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	record, err := s.store.GetIdempotency(ctx, r.RequestID)
 	if err != nil {

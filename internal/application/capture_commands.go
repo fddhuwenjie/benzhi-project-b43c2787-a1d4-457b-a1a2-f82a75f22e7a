@@ -52,7 +52,10 @@ func (s *Service) BatchAddScans(ctx context.Context, batchID string, r BatchScan
 	if err != nil {
 		return CommandResult{}, err
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CommandResult{}, err
+	}
 	defer unlock()
 	var result CommandResult
 	err = s.store.WithTx(ctx, func(tx *persistence.Tx) error {
@@ -107,7 +110,10 @@ func (s *Service) PrecheckCatalogs(ctx context.Context, batchID string, r Catalo
 	if len(r.Catalogs) == 0 {
 		return CatalogPrecheckResponse{}, domain.NewError(domain.CodeValidation, "目录数组不能为空")
 	}
-	unlock := s.lock(batchID)
+	unlock, err := s.lock(ctx, batchID)
+	if err != nil {
+		return CatalogPrecheckResponse{}, err
+	}
 	defer unlock()
 	b, err := s.GetBatch(ctx, batchID)
 	if err != nil {
